@@ -12,6 +12,18 @@ def index():
 def prijava():
     return render_template("prijava.html")
 
+def preveri_uporabnika(uporabnisko_ime, geslo):
+    conn = sqlite3.connect("test.db")
+    cursor = conn.cursor()
+    query = 'SELECT * FROM contacts WHERE first_name="'+uporabnisko_ime+'" AND last_name="'+geslo+'"'
+    cursor.execute(query)
+    result = cursor.fetchone()
+    conn.close()
+    if result:
+       return True
+    else:
+       return False
+
 @app.route('/prijava-submit/')
 def prijava_submit():
     uporabnisko_ime = request.args.get("username")
@@ -28,6 +40,7 @@ def prijava_submit():
     if result:
         response = make_response(redirect("/main/"))
         response.set_cookie("username", uporabnisko_ime)
+        response.set_cookie("password", geslo)
         return response
     else:
         return render_template("prijava.html", info_text = "Prijava ni uspela")
@@ -39,7 +52,20 @@ def registracija():
 @app.route('/registracija-submit/')
 def registracija_submit():
     uporabnisko_ime = request.args.get("username")
+
+    conn = sqlite3.connect("test.db")
+    cursor = conn.cursor()
+    query = 'SELECT * FROM contacts WHERE first_name="'+uporabnisko_ime+'"'
+    cursor.execute(query)
+    result = cursor.fetchone()
+    conn.close()
+    
+
+    if result:
+       return "Uporabnik ze obstaja"
     geslo = request.args.get("geslo")
+    if(len(geslo) < 8):
+       return "Geslo prekratko"
 
     insert_command = 'INSERT INTO contacts(first_name, last_name) VALUES("'+uporabnisko_ime+'", "'+geslo+'");'
     print(insert_command)
@@ -53,7 +79,10 @@ def registracija_submit():
 @app.route('/main/')
 def main():
     username = request.cookies.get("username")
-    if not username:
+    password = request.cookies.get("password")
+    if not username or not password:
+        return redirect("/prijava/")
+    if not preveri_uporabnika(username, password):
         return redirect("/prijava/")
 
     conn = sqlite3.connect("test.db")
