@@ -66,7 +66,6 @@ def main():
     notes_html = "<br>".join(note[1] for note in notes)
     if not notes_html:
         notes_html = "<p>Nimate še nobenih zapiskov</p>"
-
     return render_template("main.html", username=username, notes_html=notes_html)
 
 @app.route('/add-note-submit/')
@@ -76,6 +75,7 @@ def add_note_submit():
         return redirect("/prijava/")
 
     note_text = request.args.get("note")
+    note_text = note_text.replace("<", "")
 
     conn = sqlite3.connect("test.db")
     cursor = conn.cursor()
